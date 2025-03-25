@@ -20,12 +20,10 @@ import java.lang.reflect.Method;
 
 @AliucordPlugin
 public class BetterDashless extends Plugin {
+    private static final Logger logger = new Logger("BetterDashless");
     
     @Override
     public void start(Context context) {
-        // Create a logger instance
-        Logger logger = new Logger("BetterDashless");
-        
         // Patch channel list item to replace dashes with spaces
         patcher.patch(ItemChannelText.class, "onConfigure",
                 new Class<?>[]{ int.class, ChannelListItem.class }, 
@@ -56,23 +54,15 @@ public class BetterDashless extends Plugin {
                         WidgetHome widgetHome = (WidgetHome) callFrame.args[0];
                         WidgetHomeModel homeModel = (WidgetHomeModel) callFrame.args[1];
                         
-                        // Get the channel object
+                        // Safely check for channel
                         Object channel = homeModel.getChannel();
+                        if (channel == null) {
+                            logger.debug("Channel is null, skipping title modification");
+                            return;
+                        }
                         
                         // Use reflection to find a method that returns the channel name
-                        String channelName = null;
-                        for (Method method : channel.getClass().getDeclaredMethods()) {
-                            if (method.getReturnType() == String.class && method.getParameterCount() == 0) {
-                                method.setAccessible(true);
-                                try {
-                                    String potentialName = (String) method.invoke(channel);
-                                    if (potentialName != null && potentialName.contains("-")) {
-                                        channelName = potentialName.replace("-", " ");
-                                        break;
-                                    }
-                                } catch (Exception ignored) {}
-                            }
-                        }
+                        String channelName = findChannelNameWithDash(channel);
                         
                         // If we found a name, set it
                         if (channelName != null) {
@@ -82,6 +72,29 @@ public class BetterDashless extends Plugin {
                         logger.error("Error in home header patching", e);
                     }
                 }));
+    }
+    
+    private String findChannelNameWithDash(Object channel) {
+        if (channel == null) return null;
+        
+        try {
+            for (Method method : channel.getClass().getDeclaredMethods()) {
+                // Look for methods that return String and take no parameters
+                if (method.getReturnType() == String.class && method.getParameterCount() == 0) {
+                    method.setAccessible(true);
+                    try {
+                        String potentialName = (String) method.invoke(channel);
+                        if (potentialName != null && potentialName.contains("-")) {
+                            return potentialName.replace("-", " ");
+                        }
+                    } catch (Exception ignored) {}
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error finding channel name", e);
+        }
+        
+        return null;
     }
     
     @Override
