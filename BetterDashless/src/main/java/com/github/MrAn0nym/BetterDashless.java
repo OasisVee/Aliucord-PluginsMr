@@ -2,8 +2,8 @@ package com.github.MrAn0nym;
 
 import android.content.Context;
 import android.widget.TextView;
-import androidx.annotation.NonNull;
 
+import com.aliucord.Logger;
 import com.aliucord.annotations.AliucordPlugin;
 import com.aliucord.entities.Plugin;
 import com.aliucord.patcher.Hook;
@@ -22,7 +22,10 @@ import java.lang.reflect.Method;
 public class BetterDashless extends Plugin {
     
     @Override
-    public void start(@NonNull Context context) {
+    public void start(Context context) {
+        // Create a logger instance
+        Logger logger = new Logger("BetterDashless");
+        
         // Patch channel list item to replace dashes with spaces
         patcher.patch(ItemChannelText.class, "onConfigure",
                 new Class<?>[]{ int.class, ChannelListItem.class }, 
@@ -41,7 +44,7 @@ public class BetterDashless extends Plugin {
                             channelNameView.setText(originalText.replace("-", " "));
                         }
                     } catch (Exception e) {
-                        com.aliucord.Logger.log(e);
+                        logger.error("Error in channel name patching", e);
                     }
                 }));
         
@@ -76,13 +79,13 @@ public class BetterDashless extends Plugin {
                             widgetHome.setActionBarTitle(channelName);
                         }
                     } catch (Exception e) {
-                        com.aliucord.Logger.log(e);
+                        logger.error("Error in home header patching", e);
                     }
                 }));
     }
     
     @Override
-    public void stop(@NonNull Context context) {
+    public void stop(Context context) {
         patcher.unpatchAll();
     }
 }
