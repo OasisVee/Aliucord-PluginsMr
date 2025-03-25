@@ -1,4 +1,4 @@
-version = "1.0.2"
+version = "1.0.3"
 description = "Replaces dashes in channel names with spaces."
 aliucord {
     changelog.set("""
